@@ -288,37 +288,71 @@ class Dota2Launcher:
         except:
             pass
 
-    def on_start(self):
-        """点击开始按钮"""
-        self.start_btn.text = "[ 配置中... ]"
+    def _ensure_steam_path(self):
+        """确保 Steam 路径已设置，如果没有则提示选择"""
+        if not self.steam_path:
+            from tkinter import filedialog
+            path = filedialog.askdirectory(title="选择 Steam 目录（包含 steam.exe）")
+            if not path or not os.path.exists(os.path.join(path, "steam.exe")):
+                messagebox.showerror("错误", "未找到 steam.exe")
+                return False
+            self.steam_path = path
+        return True
+
+    def _configure_all_users(self):
+        """给所有检测到的账号配置启动项，返回 (success_count, server_name)"""
+        user_ids = self.find_steam_user_ids()
+        if not user_ids:
+            messagebox.showerror("错误", "未找到 Steam 用户配置")
+            return 0, ""
+
+        use_pw = self.server_type.get() == "perfectworld"
+        server_name = "国服" if use_pw else "国际服"
+
+        success_count = 0
+        for user_id in user_ids:
+            success, error = self.configure_launch_options(user_id, use_pw)
+            if success:
+                success_count += 1
+
+        return success_count, server_name
+
+    def on_write_only(self):
+        """仅写入启动项，不启动游戏"""
+        self.write_btn.text = "[ 写入中... ]"
+        self.write_btn.draw_button()
+        self.root.update()
+
+        try:
+            if not self._ensure_steam_path():
+                return
+
+            success_count, server_name = self._configure_all_users()
+
+            if success_count == 0:
+                messagebox.showerror("配置失败", "无法配置启动项")
+                return
+
+            self.status_label.config(text=f"已配置{server_name}启动项", fg="#00aa00")
+            messagebox.showinfo("完成", f"已成功配置{server_name}启动项\n共 {success_count} 个账号")
+
+        except Exception as e:
+            messagebox.showerror("错误", str(e))
+        finally:
+            self.write_btn.text = "[ 写入启动项 ]"
+            self.write_btn.draw_button()
+
+    def on_start_game(self):
+        """写入启动项并启动游戏"""
+        self.start_btn.text = "[ 启动中... ]"
         self.start_btn.draw_button()
         self.root.update()
 
         try:
-            # 选择 Steam 路径（如果需要）
-            if not self.steam_path:
-                from tkinter import filedialog
-                path = filedialog.askdirectory(title="选择 Steam 目录（包含 steam.exe）")
-                if not path or not os.path.exists(os.path.join(path, "steam.exe")):
-                    messagebox.showerror("错误", "未找到 steam.exe")
-                    return
-                self.steam_path = path
-
-            # 查找用户 ID
-            user_ids = self.find_steam_user_ids()
-            if not user_ids:
-                messagebox.showerror("错误", "未找到 Steam 用户配置")
+            if not self._ensure_steam_path():
                 return
 
-            # 给所有检测到的账号设置启动项
-            use_pw = self.server_type.get() == "perfectworld"
-            server_name = "国服" if use_pw else "国际服"
-
-            success_count = 0
-            for user_id in user_ids:
-                success, error = self.configure_launch_options(user_id, use_pw)
-                if success:
-                    success_count += 1
+            success_count, server_name = self._configure_all_users()
 
             if success_count == 0:
                 messagebox.showerror("配置失败", "无法配置启动项")
@@ -335,7 +369,7 @@ class Dota2Launcher:
 
         except Exception as e:
             messagebox.showerror("错误", str(e))
-            self.start_btn.text = "[ 开始 ]"
+            self.start_btn.text = "[ 开始游戏 ]"
             self.start_btn.draw_button()
 
     def find_steam_user_ids(self):
@@ -373,20 +407,21 @@ class Dota2Launcher:
 
                 # 修改启动项
                 if use_perfectworld:
-                    if '-perfectworld' not in content.lower():
-                        # 添加 perfectworld
-                        content = self.add_launch_option(content, "-perfectworld")
+                    # 添加 -perfectworld（会先清理旧的）
+                    content = self.add_launch_option(content, "-perfectworld")
                 else:
-                    # 移除 perfectworld
+                    # 国际服：移除 -perfectworld，不添加其他内容
                     content = self.remove_launch_option(content, "-perfectworld")
 
                 with open(config_path, 'w', encoding='utf-8') as f:
                     f.write(content)
             else:
-                # 创建新配置
-                content = self.create_new_config(use_perfectworld)
-                with open(config_path, 'w', encoding='utf-8') as f:
-                    f.write(content)
+                # 创建新配置（只有国服需要创建，国际服不需要任何配置）
+                if use_perfectworld:
+                    content = self.create_new_config(True)
+                    with open(config_path, 'w', encoding='utf-8') as f:
+                        f.write(content)
+                # 国际服且文件不存在：什么都不做
 
             return True, None
 
@@ -395,6 +430,9 @@ class Dota2Launcher:
 
     def add_launch_option(self, content, option):
         """添加启动选项到 VDF"""
+        # 先移除 -perfectworld（避免重复添加）
+        content = self.remove_launch_option(content, "-perfectworld")
+
         # 查找 Dota 2 配置段
         dota_pattern = r'"570"\s*\{([^}]*)\}'
         match = re.search(dota_pattern, content, re.DOTALL)
@@ -406,7 +444,7 @@ class Dota2Launcher:
                 # 修改现有启动项
                 new_section = re.sub(
                     r'("LaunchOptions"\s*")([^"]*)"',
-                    lambda m: f'{m.group(1)}{option} {m.group(2)}"'.strip(),
+                    lambda m: f'{m.group(1)}{option}"',
                     section
                 )
             else:
@@ -426,10 +464,19 @@ class Dota2Launcher:
         return content
 
     def remove_launch_option(self, content, option):
-        """从 VDF 移除启动选项"""
-        # 移除 perfectworld 但保留其他选项
-        content = re.sub(r'\s*' + option + r'\s*', ' ', content, flags=re.IGNORECASE)
-        content = re.sub(r'\s+', ' ', content)  # 清理多余空格
+        """从 VDF 移除启动选项（包括 LaunchOptions 字段）"""
+        # 查找 Dota 2 配置段
+        dota_pattern = r'"570"\s*\{([^}]*)\}'
+        match = re.search(dota_pattern, content, re.DOTALL)
+
+        if match and '"LaunchOptions"' in match.group(1):
+            # 移除 LaunchOptions 整行
+            section = match.group(1)
+            new_section = re.sub(r'\s*"LaunchOptions"\s*"[^"]*"', '', section)
+            content = content.replace(match.group(0), f'"570"\n\t\t\t\t{{{new_section}\n\t\t\t\t}}')
+
+        # 清理多余空行
+        content = re.sub(r'\n\n+', '\n', content)
         return content
 
     def create_new_config(self, use_perfectworld):
