@@ -230,7 +230,7 @@ class Dota2Launcher:
     def __init__(self, root):
         self.root = root
         self.root.title("Dota 2 国服启动器")
-        self.root.geometry("640x520")
+        self.root.geometry("760x600")
         self.root.resizable(False, False)
         self.root.configure(bg=COLORS["bg_primary"])
 
@@ -261,8 +261,8 @@ class Dota2Launcher:
     def center_window(self):
         """窗口居中"""
         self.root.update_idletasks()
-        width = 640
-        height = 520
+        width = 760
+        height = 600
         x = (self.root.winfo_screenwidth() // 2) - (width // 2)
         y = (self.root.winfo_screenheight() // 2) - (height // 2)
         self.root.geometry(f'{width}x{height}+{x}+{y}')
