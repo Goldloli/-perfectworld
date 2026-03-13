@@ -24,28 +24,7 @@ jobs:
         pip install pyinstaller Pillow
 
     - name: Generate icon
-      run: |
-        python -c "
-from PIL import Image, ImageDraw
-
-# 创建 256x256 的图标
-img = Image.new('RGBA', (256, 256), (30, 30, 46, 0))
-draw = ImageDraw.Draw(img)
-
-# 背景圆形
-draw.ellipse([10, 10, 246, 246], outline=(122, 162, 247), width=12)
-
-# 中心三角形（Dota 风格）
-triangle = [(128, 50), (200, 180), (56, 180)]
-draw.polygon(triangle, fill=(122, 162, 247))
-
-# 中心小圆
-draw.ellipse([100, 110, 156, 166], fill=(30, 30, 46))
-
-# 保存为多尺寸 ICO
-img.save('icon.ico', sizes=[(16,16), (32,32), (48,48), (64,64), (128,128), (256,256)])
-print('Icon generated: icon.ico')
-"
+      run: python generate_icon.py
 
     - name: Build executable
       run: |
