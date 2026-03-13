@@ -294,44 +294,22 @@ class Dota2Launcher:
                 messagebox.showerror("错误", "未找到 Steam 用户配置")
                 return
 
-            # 多账号选择
-            target_user_id = user_ids[0]
-            if len(user_ids) > 1:
-                # 简单的选择对话框
-                dialog = tk.Toplevel(self.root)
-                dialog.title("选择账号")
-                dialog.geometry("300x150")
-                dialog.configure(bg="#1a1a1a")
-                dialog.transient(self.root)
-                dialog.grab_set()
-
-                tk.Label(dialog, text="选择 Steam 账号：", bg="#1a1a1a",
-                        fg="white", font=("Microsoft YaHei", 11)).pack(pady=10)
-
-                var = tk.StringVar(value=user_ids[0])
-                combo = ttk.Combobox(dialog, values=user_ids, textvariable=var,
-                                   state="readonly", width=25)
-                combo.pack(pady=5)
-
-                def on_ok():
-                    nonlocal target_user_id
-                    target_user_id = var.get()
-                    dialog.destroy()
-
-                ModernButton(dialog, text="确定", command=on_ok, width=100, height=35).pack(pady=10)
-
-                self.root.wait_window(dialog)
-
-            # 配置启动项
+            # 给所有检测到的账号设置启动项
             use_pw = self.server_type.get() == "perfectworld"
-            success, error = self.configure_launch_options(target_user_id, use_pw)
+            server_name = "国服" if use_pw else "国际服"
 
-            if not success:
-                messagebox.showerror("配置失败", f"无法配置启动项：{error}")
+            success_count = 0
+            for user_id in user_ids:
+                success, error = self.configure_launch_options(user_id, use_pw)
+                if success:
+                    success_count += 1
+
+            if success_count == 0:
+                messagebox.showerror("配置失败", "无法配置启动项")
                 return
 
             # 启动游戏
-            self.status_label.config(text="正在启动 Dota 2...", fg="#00aa00")
+            self.status_label.config(text=f"已配置{server_name}，正在启动 Dota 2...", fg="#00aa00")
             self.root.update()
 
             os.startfile("steam://rungameid/570")
