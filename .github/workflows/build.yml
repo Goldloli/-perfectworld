@@ -30,7 +30,7 @@ jobs:
 
     - name: Build executable
       run: |
-        pyinstaller --onefile --windowed --name "Dota2Launcher" --icon=icon.ico gui_launcher.py
+        pyinstaller --onefile --windowed --name "Dota2Launcher" --icon=icon.ico --add-data "icon.ico;." gui_launcher.py
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4

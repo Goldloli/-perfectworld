@@ -253,11 +253,20 @@ class Dota2Launcher:
 
         self.create_ui()
 
+    def get_resource_path(self, filename):
+        """获取资源文件路径（兼容 PyInstaller 打包）"""
+        if hasattr(sys, '_MEIPASS'):
+            # PyInstaller 打包后的临时目录
+            return os.path.join(sys._MEIPASS, filename)
+        else:
+            # 开发环境
+            return os.path.join(os.path.dirname(__file__), filename)
+
     def set_window_icon(self):
         """设置窗口图标"""
         try:
             # 加载 icon.ico 作为窗口图标
-            icon_path = os.path.join(os.path.dirname(__file__), "icon.ico")
+            icon_path = self.get_resource_path("icon.ico")
             if os.path.exists(icon_path) and Image and ImageTk:
                 icon_img = Image.open(icon_path)
                 icon_tk = ImageTk.PhotoImage(icon_img)
@@ -291,7 +300,7 @@ class Dota2Launcher:
 
         # Dota 2 Logo（使用 icon.ico）
         try:
-            icon_path = os.path.join(os.path.dirname(__file__), "icon.ico")
+            icon_path = self.get_resource_path("icon.ico")
             if os.path.exists(icon_path) and Image and ImageTk:
                 logo_img = Image.open(icon_path)
                 logo_img = logo_img.resize((48, 48), Image.LANCZOS)
