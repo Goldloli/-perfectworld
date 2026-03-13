@@ -23,11 +23,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller Pillow
 
-    - name: Generate icon
-      run: python generate_icon.py
-      env:
-        PYTHONIOENCODING: utf-8
-
     - name: Build executable
       run: |
         pyinstaller --onefile --windowed --name "Dota2Launcher" --icon=icon.ico --add-data "icon.ico;." --add-data "dota2.png;." gui_launcher.py
