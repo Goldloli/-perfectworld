@@ -251,10 +251,12 @@ class Dota2Launcher:
     def set_window_icon(self):
         """设置窗口图标"""
         try:
-            # 尝试加载图标文件
-            icon_path = os.path.join(os.path.dirname(__file__), "icon.ico")
+            # 加载 dota2.png 作为窗口图标
+            icon_path = os.path.join(os.path.dirname(__file__), "dota2.png")
             if os.path.exists(icon_path):
-                self.root.iconbitmap(icon_path)
+                icon_img = tk.PhotoImage(file=icon_path)
+                self.root.iconphoto(True, icon_img)
+                self.icon_img = icon_img  # 保持引用防止被垃圾回收
         except:
             pass
 
