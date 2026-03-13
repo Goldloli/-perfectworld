@@ -272,8 +272,8 @@ class Dota2Launcher:
                 icon_tk = ImageTk.PhotoImage(icon_img)
                 self.root.iconphoto(True, icon_tk)
                 self.icon_img = icon_tk  # 保持引用防止被垃圾回收
-        except:
-            pass
+        except Exception as e:
+            print(f"[警告] 无法设置窗口图标: {e}")
 
     def center_window(self):
         """窗口居中"""
