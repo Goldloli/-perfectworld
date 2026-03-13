@@ -1,50 +1,91 @@
 #!/usr/bin/env python3
 """
-生成 Dota 2 启动器图标
+生成 Dota 2 风格启动器图标
 需要安装 Pillow: pip install Pillow
 """
 
 try:
     from PIL import Image, ImageDraw
 except ImportError:
-    print("请先安装 Pillow: pip install Pillow")
+    print("Please install Pillow: pip install Pillow")
     exit(1)
 
 def generate_icon():
-    """生成应用图标"""
+    """生成 Dota 2 风格图标"""
     size = 256
-    img = Image.new('RGBA', (size, size), (30, 30, 46, 0))
+    img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
-    # 配色
-    primary_color = (122, 162, 247)  # 蓝色
-    bg_color = (30, 30, 46)          # 背景色
+    # Dota 2 配色
+    red_color = (178, 34, 34)      # 深红色
+    dark_red = (139, 0, 0)         # 暗红色
+    black = (10, 10, 10)           # 黑色背景
+    gray = (40, 40, 40)            # 灰色
 
-    # 外圈
-    padding = 10
+    center_x, center_y = size // 2, size // 2
+
+    # 背景圆形（黑色底）
+    padding = 8
     draw.ellipse(
         [padding, padding, size - padding, size - padding],
-        outline=primary_color,
-        width=12
+        fill=black,
+        outline=red_color,
+        width=6
     )
 
-    # 中心三角形（Dota 风格）
-    center_x, center_y = size // 2, size // 2
-    triangle_size = 65
-    triangle = [
-        (center_x, center_y - triangle_size),
-        (center_x + int(triangle_size * 0.87), center_y + triangle_size // 2),
-        (center_x - int(triangle_size * 0.87), center_y + triangle_size // 2)
+    # 绘制抽象龙/恶魔头像（Dota 2 风格）
+    # 头部轮廓 - 使用多边形绘制
+    head_points = [
+        # 头顶
+        (center_x, center_y - 70),
+        # 右侧角
+        (center_x + 55, center_y - 50),
+        (center_x + 70, center_y - 30),
+        # 右脸颊
+        (center_x + 60, center_y + 10),
+        (center_x + 50, center_y + 40),
+        # 下巴
+        (center_x + 20, center_y + 65),
+        (center_x, center_y + 70),
+        (center_x - 20, center_y + 65),
+        # 左脸颊
+        (center_x - 50, center_y + 40),
+        (center_x - 60, center_y + 10),
+        # 左侧角
+        (center_x - 70, center_y - 30),
+        (center_x - 55, center_y - 50),
     ]
-    draw.polygon(triangle, fill=primary_color)
+    draw.polygon(head_points, fill=red_color)
 
-    # 中心小圆
-    circle_radius = 28
-    draw.ellipse(
-        [center_x - circle_radius, center_y - circle_radius // 2,
-         center_x + circle_radius, center_y + circle_radius * 1.5],
-        fill=bg_color
-    )
+    # 眼睛（发光的白色/浅色）
+    eye_color = (255, 200, 100)  # 金色眼睛
+    # 左眼
+    left_eye_points = [
+        (center_x - 35, center_y - 15),
+        (center_x - 15, center_y - 10),
+        (center_x - 20, center_y + 5),
+        (center_x - 40, center_y),
+    ]
+    draw.polygon(left_eye_points, fill=eye_color)
+
+    # 右眼
+    right_eye_points = [
+        (center_x + 35, center_y - 15),
+        (center_x + 15, center_y - 10),
+        (center_x + 20, center_y + 5),
+        (center_x + 40, center_y),
+    ]
+    draw.polygon(right_eye_points, fill=eye_color)
+
+    # 额头装饰线
+    draw.line([
+        (center_x, center_y - 60),
+        (center_x, center_y - 25)
+    ], fill=dark_red, width=4)
+
+    # 鼻孔
+    draw.ellipse([center_x - 8, center_y + 35, center_x - 3, center_y + 42], fill=dark_red)
+    draw.ellipse([center_x + 3, center_y + 35, center_x + 8, center_y + 42], fill=dark_red)
 
     # 保存为多尺寸 ICO 文件
     img.save('icon.ico', sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
