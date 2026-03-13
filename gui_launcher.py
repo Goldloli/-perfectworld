@@ -256,12 +256,13 @@ class Dota2Launcher:
     def set_window_icon(self):
         """设置窗口图标"""
         try:
-            # 加载 dota2.png 作为窗口图标
-            icon_path = os.path.join(os.path.dirname(__file__), "dota2.png")
-            if os.path.exists(icon_path):
-                icon_img = tk.PhotoImage(file=icon_path)
-                self.root.iconphoto(True, icon_img)
-                self.icon_img = icon_img  # 保持引用防止被垃圾回收
+            # 加载 icon.ico 作为窗口图标
+            icon_path = os.path.join(os.path.dirname(__file__), "icon.ico")
+            if os.path.exists(icon_path) and Image and ImageTk:
+                icon_img = Image.open(icon_path)
+                icon_tk = ImageTk.PhotoImage(icon_img)
+                self.root.iconphoto(True, icon_tk)
+                self.icon_img = icon_tk  # 保持引用防止被垃圾回收
         except:
             pass
 
@@ -288,11 +289,11 @@ class Dota2Launcher:
         title_row = tk.Frame(header_frame, bg=COLORS["bg_primary"])
         title_row.pack(anchor="center")
 
-        # Dota 2 Logo（使用图片）
+        # Dota 2 Logo（使用 icon.ico）
         try:
-            logo_path = os.path.join(os.path.dirname(__file__), "dota2.png")
-            if os.path.exists(logo_path) and Image and ImageTk:
-                logo_img = Image.open(logo_path)
+            icon_path = os.path.join(os.path.dirname(__file__), "icon.ico")
+            if os.path.exists(icon_path) and Image and ImageTk:
+                logo_img = Image.open(icon_path)
                 logo_img = logo_img.resize((48, 48), Image.LANCZOS)
                 logo_tk = ImageTk.PhotoImage(logo_img)
                 logo_label = tk.Label(title_row, image=logo_tk, bg=COLORS["bg_primary"])
