@@ -27,11 +27,11 @@ COLORS = {
     "bg_card": "#3d3d3d",          # 卡片背景
     "accent": "#b71c1c",           # 强调色 (Dota红)
     "accent_hover": "#d32f2f",     # 强调色悬停 (亮红)
-    "success": "#b71c1c",          # 成功色 (红色)
-    "success_hover": "#d32f2f",    # 成功色悬停
+    "success": "#2e7d32",          # 成功色 (绿色)
+    "success_hover": "#4caf50",    # 成功色悬停
     "text_primary": "#ffffff",     # 主文字 (白色)
-    "text_secondary": "#ff6b6b",   # 次级文字 (浅红，提高对比度)
-    "text_muted": "#aaaaaa",       # 灰色文字（提高亮度）
+    "text_secondary": "#ffffff",   # 次级文字 (白色)
+    "text_muted": "#888888",       # 灰色文字
     "border": "#5c0000",           # 边框色 (深红)
     "radio_selected": "#ff1744",   # 单选选中色 (亮红)
 }
@@ -101,7 +101,7 @@ class ModernButton(tk.Canvas):
         # 绘制文字
         self.create_text(self.winfo_reqwidth()//2-1, self.winfo_reqheight()//2+offset,
                         text=self.text, fill=self.text_color,
-                        font=("Microsoft YaHei", 11, "bold"))
+                        font=("Microsoft YaHei", 12, "bold"))
 
     def _darken_color(self, color):
         """将颜色变暗"""
@@ -162,7 +162,7 @@ class RadioOption(tk.Frame):
 
         # 标题
         self.title_label = tk.Label(title_frame, text=title, bg=COLORS["bg_card"],
-                                   fg=COLORS["text_primary"], font=("Microsoft YaHei", 12, "bold"),
+                                   fg=COLORS["text_primary"], font=("Microsoft YaHei", 13, "bold"),
                                    anchor="w")
         self.title_label.pack(side=tk.LEFT)
 
@@ -170,18 +170,20 @@ class RadioOption(tk.Frame):
         if value == "perfectworld":
             tag_text = "推荐"
             tag_color = COLORS["success"]
+            tag_fg = "#ffffff"
         else:
-            tag_text = "全球"
-            tag_color = COLORS["accent"]
+            tag_text = "不推荐"
+            tag_color = None  # 无背景
+            tag_fg = COLORS["text_muted"]  # 灰色文字
 
         self.tag_label = tk.Label(title_frame, text=tag_text, bg=tag_color,
-                                 fg="#1e1e2e", font=("Microsoft YaHei", 8, "bold"),
+                                 fg=tag_fg, font=("Microsoft YaHei", 9, "bold"),
                                  padx=8, pady=2)
         self.tag_label.pack(side=tk.LEFT, padx=(10, 0))
 
         # 副标题
         self.subtitle_label = tk.Label(text_frame, text=subtitle, bg=COLORS["bg_card"],
-                                      fg=COLORS["text_muted"], font=("Microsoft YaHei", 10),
+                                      fg=COLORS["text_muted"], font=("Microsoft YaHei", 11),
                                       anchor="w", wraplength=450, justify=tk.LEFT)
         self.subtitle_label.pack(fill=tk.X, pady=(6, 0))
 
@@ -216,10 +218,10 @@ class RadioOption(tk.Frame):
 
         if selected:
             self.config(highlightbackground=COLORS["radio_selected"], highlightthickness=2)
-            self.title_label.config(fg=COLORS["text_primary"])
         else:
             self.config(highlightbackground=COLORS["border"], highlightthickness=1)
-            self.title_label.config(fg=COLORS["text_secondary"])
+        # 标题始终使用白色
+        self.title_label.config(fg=COLORS["text_primary"])
 
     def on_enter(self, event):
         self.config(cursor="hand2")
@@ -335,11 +337,11 @@ class Dota2Launcher:
         title_col.pack(side=tk.LEFT)
 
         title = tk.Label(title_col, text="Dota 2", bg=COLORS["bg_primary"],
-                        fg=COLORS["text_primary"], font=("Microsoft YaHei", 28, "bold"))
+                        fg=COLORS["text_primary"], font=("Microsoft YaHei", 30, "bold"))
         title.pack(anchor="w")
 
         subtitle = tk.Label(title_col, text="国服启动器", bg=COLORS["bg_primary"],
-                           fg=COLORS["accent"], font=("Microsoft YaHei", 14, "bold"))
+                           fg=COLORS["text_primary"], font=("Microsoft YaHei", 15, "bold"))
         subtitle.pack(anchor="w")
 
         # 分隔线
@@ -348,8 +350,8 @@ class Dota2Launcher:
 
         # 选择提示
         hint = tk.Label(main_container, text="选择服务器：",
-                       bg=COLORS["bg_primary"], fg=COLORS["text_secondary"],
-                       font=("Microsoft YaHei", 11))
+                       bg=COLORS["bg_primary"], fg=COLORS["text_primary"],
+                       font=("Microsoft YaHei", 12))
         hint.pack(anchor="w", pady=(0, 12))
 
         # 选项区域
@@ -415,7 +417,7 @@ class Dota2Launcher:
                                     text=self.get_status_text(),
                                     bg=COLORS["bg_primary"],
                                     fg=COLORS["text_muted"],
-                                    font=("Microsoft YaHei", 9))
+                                    font=("Microsoft YaHei", 10))
         self.status_label.pack(pady=(12, 0))
 
     def get_status_text(self):
