@@ -6,11 +6,12 @@
 
 ## ✨ 特点
 
-- 🎨 **现代化界面** - 类似 CS 启动器的深色主题设计
+- 🎨 **现代化界面** - 扁平化深色主题，卡片式布局设计
 - ⚡ **一键配置** - 自动添加/移除 `-perfectworld` 启动项
-- 🎮 **自动启动** - 配置完成后自动启动 Dota 2
+- 🎮 **双模式启动** - 支持"仅写入配置"或"写入并启动游戏"
 - 💾 **安全备份** - 每次修改前自动备份原配置
-- 🔍 **智能检测** - 自动查找 Steam 安装路径
+- 🔍 **智能检测** - 自动查找 Steam 安装路径，支持多账号
+- 🏷️ **视觉标签** - 国服显示"推荐"标签，国际服显示"全球"标签
 
 ## 📦 下载
 
@@ -20,19 +21,23 @@
 
 1. 运行 `Dota2Launcher.exe`
 2. 选择服务器：
-   - **-perfectworld**: 国服（低延迟，推荐）
-   - **-worldwide**: 国际服
-3. 点击 **[ 开始 ]** 按钮
-4. 程序会自动配置并启动 Dota 2
+   - **Perfect World 国服**: 低延迟，需要绑定完美世界账号
+   - **Steam 国际服**: 全球服务器，可能有网络延迟
+3. 点击按钮：
+   - **仅写入启动项**: 只修改配置，不启动游戏
+   - **开始游戏**: 修改配置并自动启动 Dota 2
 
 ## 🛠️ 从源码构建
 
 ```bash
 # 安装依赖
-pip install pyinstaller
+pip install pyinstaller Pillow
 
-# 构建可执行文件
-pyinstaller --onefile --windowed --name "Dota2Launcher" gui_launcher.py
+# 生成图标（可选）
+python generate_icon.py
+
+# 构建可执行文件（带图标）
+pyinstaller --onefile --windowed --name "Dota2Launcher" --icon=icon.ico gui_launcher.py
 
 # 输出位置: dist/Dota2Launcher.exe
 ```
@@ -42,6 +47,7 @@ pyinstaller --onefile --windowed --name "Dota2Launcher" gui_launcher.py
 ```
 .
 ├── gui_launcher.py           # 主程序源码
+├── generate_icon.py          # 图标生成脚本
 ├── .github/workflows/        # GitHub Actions 配置
 └── README.md                 # 本文件
 ```

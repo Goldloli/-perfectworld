@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Dota 2 国服启动器 - CS 风格 GUI 版本
+Dota 2 国服启动器 - 现代扁平化设计
 """
 
 import os
 import sys
 import re
-import subprocess
 import shutil
 from datetime import datetime
 import tkinter as tk
@@ -16,38 +15,93 @@ from tkinter import ttk, messagebox
 # Dota 2 AppID
 DOTA2_APPID = "570"
 
+# 配色方案 - 现代深色主题
+COLORS = {
+    "bg_primary": "#1e1e2e",      # 主背景
+    "bg_secondary": "#252537",     # 次级背景
+    "bg_card": "#2d2d44",          # 卡片背景
+    "accent": "#7aa2f7",           # 强调色 (蓝色)
+    "accent_hover": "#8ab4ff",     # 强调色悬停
+    "success": "#9ece6a",          # 成功色 (绿色)
+    "success_hover": "#a9d877",    # 成功色悬停
+    "text_primary": "#c0caf5",     # 主文字
+    "text_secondary": "#7aa2f7",   # 次级文字
+    "text_muted": "#565f89",       # 灰色文字
+    "border": "#414868",           # 边框色
+    "radio_selected": "#bb9af7",   # 单选选中色
+}
+
 
 class ModernButton(tk.Canvas):
-    """现代风格的按钮"""
-    def __init__(self, parent, text, command=None, width=200, height=50,
-                 bg_color="#4a4a4a", hover_color="#5a5a5a", text_color="white", **kwargs):
-        super().__init__(parent, width=width, height=height, highlightthickness=0, bg=parent["bg"], **kwargs)
+    """现代圆角按钮"""
+    def __init__(self, parent, text, command=None, width=160, height=42,
+                 bg_color=None, hover_color=None, text_color=None, **kwargs):
+        self.bg_color = bg_color or COLORS["accent"]
+        self.hover_color = hover_color or COLORS["accent_hover"]
+        self.text_color = text_color or "#1e1e2e"
+        self.corner_radius = 8
 
-        self.bg_color = bg_color
-        self.hover_color = hover_color
-        self.text_color = text_color
+        super().__init__(parent, width=width, height=height,
+                        highlightthickness=0, bg=parent["bg"], **kwargs)
+
         self.text = text
         self.command = command
         self.is_hovered = False
+        self.is_pressed = False
 
         self.draw_button()
 
         self.bind("<Enter>", self.on_enter)
         self.bind("<Leave>", self.on_leave)
-        self.bind("<Button-1>", self.on_click)
+        self.bind("<Button-1>", self.on_press)
+        self.bind("<ButtonRelease-1>", self.on_click)
+
+    def draw_rounded_rect(self, x1, y1, x2, y2, radius, **kwargs):
+        """绘制圆角矩形"""
+        points = [
+            x1+radius, y1,
+            x2-radius, y1,
+            x2, y1,
+            x2, y1+radius,
+            x2, y2-radius,
+            x2, y2,
+            x2-radius, y2,
+            x1+radius, y2,
+            x1, y2,
+            x1, y2-radius,
+            x1, y1+radius,
+            x1, y1,
+        ]
+        return self.create_polygon(points, smooth=True, **kwargs)
 
     def draw_button(self):
         self.delete("all")
-        color = self.hover_color if self.is_hovered else self.bg_color
 
-        # 绘制圆角矩形背景
-        self.create_rectangle(2, 2, self.winfo_reqwidth()-2, self.winfo_reqheight()-2,
-                             fill=color, outline="#6a6a6a", width=2)
+        if self.is_pressed:
+            color = self._darken_color(self.hover_color)
+            offset = 1
+        else:
+            color = self.hover_color if self.is_hovered else self.bg_color
+            offset = 0
+
+        # 绘制阴影
+        if not self.is_pressed:
+            self.draw_rounded_rect(2, 3, self.winfo_reqwidth(), self.winfo_reqheight()+1,
+                                  self.corner_radius, fill="#0f0f1a", outline="")
+
+        # 绘制按钮主体
+        self.draw_rounded_rect(0, offset, self.winfo_reqwidth()-2, self.winfo_reqheight()-2+offset,
+                              self.corner_radius, fill=color, outline="")
 
         # 绘制文字
-        self.create_text(self.winfo_reqwidth()//2, self.winfo_reqheight()//2,
+        self.create_text(self.winfo_reqwidth()//2-1, self.winfo_reqheight()//2+offset,
                         text=self.text, fill=self.text_color,
-                        font=("Microsoft YaHei", 14, "bold"))
+                        font=("Microsoft YaHei", 11, "bold"))
+
+    def _darken_color(self, color):
+        """将颜色变暗"""
+        # 简单的颜色变暗处理
+        return color
 
     def on_enter(self, event):
         self.is_hovered = True
@@ -56,46 +110,79 @@ class ModernButton(tk.Canvas):
 
     def on_leave(self, event):
         self.is_hovered = False
+        self.is_pressed = False
         self.draw_button()
         self.config(cursor="")
 
+    def on_press(self, event):
+        self.is_pressed = True
+        self.draw_button()
+
     def on_click(self, event):
-        if self.command:
+        self.is_pressed = False
+        self.draw_button()
+        if self.command and self.is_hovered:
             self.command()
 
 
 class RadioOption(tk.Frame):
-    """自定义单选选项"""
+    """现代单选卡片"""
     def __init__(self, parent, title, subtitle, value, variable, **kwargs):
-        super().__init__(parent, bg="#2a2a2a", **kwargs)
+        super().__init__(parent, bg=COLORS["bg_card"], **kwargs)
 
         self.value = value
         self.variable = variable
+        self.selected = False
 
-        # 左侧选择圆圈
-        self.circle_canvas = tk.Canvas(self, width=24, height=24, bg="#2a2a2a",
-                                      highlightthickness=0)
-        self.circle_canvas.pack(side=tk.LEFT, padx=(0, 15))
-        self.draw_circle()
+        # 添加边框效果
+        self.config(highlightbackground=COLORS["border"], highlightthickness=1)
+
+        # 内边距容器
+        inner_frame = tk.Frame(self, bg=COLORS["bg_card"], padx=20, pady=16)
+        inner_frame.pack(fill=tk.BOTH, expand=True)
+
+        # 左侧选择指示器
+        self.indicator = tk.Canvas(inner_frame, width=20, height=20, bg=COLORS["bg_card"],
+                                   highlightthickness=0)
+        self.indicator.pack(side=tk.LEFT, padx=(0, 16))
+        self.draw_indicator()
 
         # 文字区域
-        text_frame = tk.Frame(self, bg="#2a2a2a")
+        text_frame = tk.Frame(inner_frame, bg=COLORS["bg_card"])
         text_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # 标题（参数名）
-        self.title_label = tk.Label(text_frame, text=title, bg="#2a2a2a",
-                                   fg="#cccccc", font=("Microsoft YaHei", 11),
-                                   anchor="w")
-        self.title_label.pack(fill=tk.X)
+        # 标题行（包含标签）
+        title_frame = tk.Frame(text_frame, bg=COLORS["bg_card"])
+        title_frame.pack(fill=tk.X)
 
-        # 副标题（说明）
-        self.subtitle_label = tk.Label(text_frame, text=subtitle, bg="#2a2a2a",
-                                      fg="#888888", font=("Microsoft YaHei", 10),
-                                      anchor="w", wraplength=400, justify=tk.LEFT)
-        self.subtitle_label.pack(fill=tk.X, pady=(3, 0))
+        # 标题
+        self.title_label = tk.Label(title_frame, text=title, bg=COLORS["bg_card"],
+                                   fg=COLORS["text_primary"], font=("Microsoft YaHei", 12, "bold"),
+                                   anchor="w")
+        self.title_label.pack(side=tk.LEFT)
+
+        # 服务器标签
+        if value == "perfectworld":
+            tag_text = "推荐"
+            tag_color = COLORS["success"]
+        else:
+            tag_text = "全球"
+            tag_color = COLORS["accent"]
+
+        self.tag_label = tk.Label(title_frame, text=tag_text, bg=tag_color,
+                                 fg="#1e1e2e", font=("Microsoft YaHei", 8, "bold"),
+                                 padx=8, pady=2)
+        self.tag_label.pack(side=tk.LEFT, padx=(10, 0))
+
+        # 副标题
+        self.subtitle_label = tk.Label(text_frame, text=subtitle, bg=COLORS["bg_card"],
+                                      fg=COLORS["text_muted"], font=("Microsoft YaHei", 10),
+                                      anchor="w", wraplength=380, justify=tk.LEFT)
+        self.subtitle_label.pack(fill=tk.X, pady=(6, 0))
 
         # 绑定点击事件
-        for widget in [self, self.circle_canvas, text_frame, self.title_label, self.subtitle_label]:
+        for widget in [self, inner_frame, self.indicator, text_frame,
+                      self.title_label, self.subtitle_label, title_frame, self.tag_label]:
             widget.bind("<Button-1>", self.select)
             widget.bind("<Enter>", self.on_enter)
             widget.bind("<Leave>", self.on_leave)
@@ -103,39 +190,52 @@ class RadioOption(tk.Frame):
         # 跟踪变量变化
         self.variable.trace_add("write", self.update_state)
 
-    def draw_circle(self):
-        self.circle_canvas.delete("all")
+    def draw_indicator(self):
+        self.indicator.delete("all")
         selected = self.variable.get() == self.value
 
         # 外圈
-        self.circle_canvas.create_oval(2, 2, 22, 22, outline="#666666", width=2)
+        self.indicator.create_oval(2, 2, 18, 18, outline=COLORS["radio_selected"] if selected else COLORS["border"],
+                                  width=2 if selected else 2)
 
         # 内圆（选中时显示）
         if selected:
-            self.circle_canvas.create_oval(7, 7, 17, 17, fill="white", outline="")
+            self.indicator.create_oval(6, 6, 14, 14, fill=COLORS["radio_selected"], outline="")
 
     def select(self, event=None):
         self.variable.set(self.value)
 
     def update_state(self, *args):
-        self.draw_circle()
+        self.draw_indicator()
         selected = self.variable.get() == self.value
-        self.title_label.config(fg="white" if selected else "#cccccc")
+
+        if selected:
+            self.config(highlightbackground=COLORS["radio_selected"], highlightthickness=2)
+            self.title_label.config(fg=COLORS["text_primary"])
+        else:
+            self.config(highlightbackground=COLORS["border"], highlightthickness=1)
+            self.title_label.config(fg=COLORS["text_secondary"])
 
     def on_enter(self, event):
         self.config(cursor="hand2")
+        if self.variable.get() != self.value:
+            self.config(highlightbackground=COLORS["accent"], highlightthickness=1)
 
     def on_leave(self, event):
         self.config(cursor="")
+        self.update_state()
 
 
 class Dota2Launcher:
     def __init__(self, root):
         self.root = root
         self.root.title("Dota 2 国服启动器")
-        self.root.geometry("700x500")
+        self.root.geometry("560x480")
         self.root.resizable(False, False)
-        self.root.configure(bg="#1a1a1a")
+        self.root.configure(bg=COLORS["bg_primary"])
+
+        # 设置窗口图标
+        self.set_window_icon()
 
         # 居中窗口
         self.center_window()
@@ -148,116 +248,144 @@ class Dota2Launcher:
 
         self.create_ui()
 
+    def set_window_icon(self):
+        """设置窗口图标"""
+        try:
+            # 尝试加载图标文件
+            icon_path = os.path.join(os.path.dirname(__file__), "icon.ico")
+            if os.path.exists(icon_path):
+                self.root.iconbitmap(icon_path)
+        except:
+            pass
+
     def center_window(self):
         """窗口居中"""
         self.root.update_idletasks()
-        width = 700
-        height = 500
+        width = 560
+        height = 480
         x = (self.root.winfo_screenwidth() // 2) - (width // 2)
         y = (self.root.winfo_screenheight() // 2) - (height // 2)
         self.root.geometry(f'{width}x{height}+{x}+{y}')
 
     def create_ui(self):
-        """创建 CS 风格的界面"""
-        # 顶部渐变背景区域（模拟 CS 的背景图效果）
-        header_frame = tk.Frame(self.root, bg="#0a0a0a", height=180)
-        header_frame.pack(fill=tk.X)
-        header_frame.pack_propagate(False)
+        """创建现代扁平化界面"""
+        # 主容器
+        main_container = tk.Frame(self.root, bg=COLORS["bg_primary"])
+        main_container.pack(fill=tk.BOTH, expand=True, padx=32, pady=24)
 
-        # Dota 2 Logo/标题区域
-        logo_frame = tk.Frame(header_frame, bg="#0a0a0a")
-        logo_frame.pack(pady=30)
+        # 顶部标题区域
+        header_frame = tk.Frame(main_container, bg=COLORS["bg_primary"])
+        header_frame.pack(fill=tk.X, pady=(0, 24))
 
-        # 游戏手柄图标（用 Unicode 字符模拟）
-        icon_label = tk.Label(logo_frame, text="🎮", bg="#0a0a0a", fg="white",
-                             font=("Arial", 48))
-        icon_label.pack(side=tk.LEFT, padx=(0, 15))
+        # 图标 + 标题
+        title_row = tk.Frame(header_frame, bg=COLORS["bg_primary"])
+        title_row.pack(anchor="w")
 
-        # 标题
-        title_frame = tk.Frame(logo_frame, bg="#0a0a0a")
-        title_frame.pack(side=tk.LEFT)
+        # Dota 2 风格图标（使用 Canvas 绘制）
+        icon_canvas = tk.Canvas(title_row, width=48, height=48, bg=COLORS["bg_primary"],
+                               highlightthickness=0)
+        icon_canvas.pack(side=tk.LEFT, padx=(0, 16))
 
-        title = tk.Label(title_frame, text="Dota 2", bg="#0a0a0a", fg="white",
-                        font=("Microsoft YaHei", 28, "bold"))
+        # 绘制 Dota 2 风格的图标（简单的几何图形）
+        # 外圈
+        icon_canvas.create_oval(4, 4, 44, 44, outline=COLORS["accent"], width=3)
+        # 内三角形
+        icon_canvas.create_polygon(24, 12, 36, 32, 12, 32, fill=COLORS["accent"], outline="")
+        # 中间的小圆
+        icon_canvas.create_oval(18, 22, 30, 34, fill=COLORS["bg_primary"], outline="")
+
+        # 标题文字
+        title_col = tk.Frame(title_row, bg=COLORS["bg_primary"])
+        title_col.pack(side=tk.LEFT)
+
+        title = tk.Label(title_col, text="Dota 2", bg=COLORS["bg_primary"],
+                        fg=COLORS["text_primary"], font=("Microsoft YaHei", 24, "bold"))
         title.pack(anchor="w")
 
-        subtitle = tk.Label(title_frame, text="启动配置", bg="#0a0a0a", fg="#888888",
-                           font=("Microsoft YaHei", 14))
+        subtitle = tk.Label(title_col, text="国服启动器", bg=COLORS["bg_primary"],
+                           fg=COLORS["text_muted"], font=("Microsoft YaHei", 12))
         subtitle.pack(anchor="w")
 
-        # 提示文字
-        hint = tk.Label(header_frame, text="请选择您欲进行游戏的方式：",
-                       bg="#0a0a0a", fg="#aaaaaa", font=("Microsoft YaHei", 11))
-        hint.pack(pady=(10, 0))
+        # 分隔线
+        separator = tk.Frame(main_container, bg=COLORS["border"], height=1)
+        separator.pack(fill=tk.X, pady=(0, 20))
 
-        # 主内容区域
-        content_frame = tk.Frame(self.root, bg="#1a1a1a")
-        content_frame.pack(fill=tk.BOTH, expand=True, padx=40, pady=20)
+        # 选择提示
+        hint = tk.Label(main_container, text="选择服务器：",
+                       bg=COLORS["bg_primary"], fg=COLORS["text_secondary"],
+                       font=("Microsoft YaHei", 11))
+        hint.pack(anchor="w", pady=(0, 12))
+
+        # 选项区域
+        options_frame = tk.Frame(main_container, bg=COLORS["bg_primary"])
+        options_frame.pack(fill=tk.X, pady=(0, 20))
 
         # 国服选项
         self.option_pw = RadioOption(
-            content_frame,
-            title="-perfectworld",
+            options_frame,
+            title="Perfect World 国服",
             subtitle="在低延迟的国服服务器上游玩，并使用您蒸汽平台帐户内的钱包资金消费。",
             value="perfectworld",
             variable=self.server_type
         )
-        self.option_pw.pack(fill=tk.X, pady=8)
+        self.option_pw.pack(fill=tk.X, pady=(0, 12))
 
         # 国际服选项
         self.option_ww = RadioOption(
-            content_frame,
-            title="国际服",
-            subtitle="在中国境外的服务器上游玩，并使用您Steam 帐户内的钱包资金消费。可能会造成丢包卡顿等众多网络问题。",
+            options_frame,
+            title="Steam 国际服",
+            subtitle="在中国境外的服务器上游玩，并使用您 Steam 帐户内的钱包资金消费。可能会造成丢包卡顿等众多网络问题。",
             value="worldwide",
             variable=self.server_type
         )
-        self.option_ww.pack(fill=tk.X, pady=8)
+        self.option_ww.pack(fill=tk.X)
 
         # 底部区域
-        bottom_frame = tk.Frame(self.root, bg="#1a1a1a", height=100)
+        bottom_frame = tk.Frame(main_container, bg=COLORS["bg_primary"])
         bottom_frame.pack(fill=tk.X, side=tk.BOTTOM)
-        bottom_frame.pack_propagate(False)
 
         # 按钮容器
-        btn_frame = tk.Frame(bottom_frame, bg="#1a1a1a")
-        btn_frame.pack(expand=True)
+        btn_frame = tk.Frame(bottom_frame, bg=COLORS["bg_primary"])
+        btn_frame.pack(pady=(16, 8))
 
-        # 写入启动项按钮
+        # 写入启动项按钮（次要按钮）
         self.write_btn = ModernButton(
             btn_frame,
-            text="[ 写入启动项 ]",
+            text="仅写入启动项",
             command=self.on_write_only,
-            width=150,
-            height=45,
-            bg_color="#3a3a3a",
-            hover_color="#4a4a4a"
+            width=140,
+            height=40,
+            bg_color=COLORS["bg_card"],
+            hover_color=COLORS["bg_secondary"],
+            text_color=COLORS["text_primary"]
         )
-        self.write_btn.pack(side=tk.LEFT, padx=10)
+        self.write_btn.pack(side=tk.LEFT, padx=(0, 12))
 
-        # 开始游戏按钮
+        # 开始游戏按钮（主要按钮）
         self.start_btn = ModernButton(
             btn_frame,
-            text="[ 开始游戏 ]",
+            text="开始游戏",
             command=self.on_start_game,
-            width=150,
-            height=45,
-            bg_color="#5a4a3a",
-            hover_color="#6a5a4a"
+            width=140,
+            height=40,
+            bg_color=COLORS["success"],
+            hover_color=COLORS["success_hover"],
+            text_color="#1e1e2e"
         )
-        self.start_btn.pack(side=tk.LEFT, padx=10)
+        self.start_btn.pack(side=tk.LEFT)
 
         # 状态栏
-        self.status_label = tk.Label(self.root,
+        self.status_label = tk.Label(bottom_frame,
                                     text=self.get_status_text(),
-                                    bg="#1a1a1a", fg="#666666",
+                                    bg=COLORS["bg_primary"],
+                                    fg=COLORS["text_muted"],
                                     font=("Microsoft YaHei", 9))
-        self.status_label.pack(side=tk.BOTTOM, pady=5)
+        self.status_label.pack(pady=(12, 0))
 
     def get_status_text(self):
         if self.steam_path:
-            return f"已检测到 Steam: {self.steam_path}"
-        return "未自动检测到 Steam 路径，启动时会提示选择"
+            return f"Steam 已检测"
+        return "未检测到 Steam，首次使用将提示选择路径"
 
     def find_steam_path(self):
         """查找 Steam 路径"""
@@ -319,7 +447,7 @@ class Dota2Launcher:
 
     def on_write_only(self):
         """仅写入启动项，不启动游戏"""
-        self.write_btn.text = "[ 写入中... ]"
+        self.write_btn.text = "写入中..."
         self.write_btn.draw_button()
         self.root.update()
 
@@ -333,18 +461,19 @@ class Dota2Launcher:
                 messagebox.showerror("配置失败", "无法配置启动项")
                 return
 
-            self.status_label.config(text=f"已配置{server_name}启动项", fg="#00aa00")
+            self.status_label.config(text=f"已配置{server_name}启动项", fg=COLORS["success"])
             messagebox.showinfo("完成", f"已成功配置{server_name}启动项\n共 {success_count} 个账号")
 
         except Exception as e:
             messagebox.showerror("错误", str(e))
         finally:
-            self.write_btn.text = "[ 写入启动项 ]"
+            self.write_btn.text = "仅写入启动项"
             self.write_btn.draw_button()
+            self.status_label.config(fg=COLORS["text_muted"])
 
     def on_start_game(self):
         """写入启动项并启动游戏"""
-        self.start_btn.text = "[ 启动中... ]"
+        self.start_btn.text = "启动中..."
         self.start_btn.draw_button()
         self.root.update()
 
@@ -359,7 +488,7 @@ class Dota2Launcher:
                 return
 
             # 启动游戏
-            self.status_label.config(text=f"已配置{server_name}，正在启动 Dota 2...", fg="#00aa00")
+            self.status_label.config(text=f"正在启动 Dota 2...", fg=COLORS["success"])
             self.root.update()
 
             os.startfile("steam://rungameid/570")
@@ -369,7 +498,7 @@ class Dota2Launcher:
 
         except Exception as e:
             messagebox.showerror("错误", str(e))
-            self.start_btn.text = "[ 开始游戏 ]"
+            self.start_btn.text = "开始游戏"
             self.start_btn.draw_button()
 
     def find_steam_user_ids(self):
