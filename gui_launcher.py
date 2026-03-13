@@ -11,24 +11,29 @@ import shutil
 from datetime import datetime
 import tkinter as tk
 from tkinter import ttk, messagebox
+try:
+    from PIL import Image, ImageTk
+except ImportError:
+    Image = None
+    ImageTk = None
 
 # Dota 2 AppID
 DOTA2_APPID = "570"
 
-# 配色方案 - 现代深色主题
+# 配色方案 - Dota 2 红黑色调
 COLORS = {
-    "bg_primary": "#1e1e2e",      # 主背景
-    "bg_secondary": "#252537",     # 次级背景
-    "bg_card": "#2d2d44",          # 卡片背景
-    "accent": "#7aa2f7",           # 强调色 (蓝色)
-    "accent_hover": "#8ab4ff",     # 强调色悬停
-    "success": "#9ece6a",          # 成功色 (绿色)
-    "success_hover": "#a9d877",    # 成功色悬停
-    "text_primary": "#c0caf5",     # 主文字
-    "text_secondary": "#7aa2f7",   # 次级文字
-    "text_muted": "#565f89",       # 灰色文字
-    "border": "#414868",           # 边框色
-    "radio_selected": "#bb9af7",   # 单选选中色
+    "bg_primary": "#0d0d0d",       # 主背景 (深黑)
+    "bg_secondary": "#1a1a1a",     # 次级背景
+    "bg_card": "#242424",          # 卡片背景
+    "accent": "#b71c1c",           # 强调色 (Dota红)
+    "accent_hover": "#d32f2f",     # 强调色悬停 (亮红)
+    "success": "#b71c1c",          # 成功色 (红色)
+    "success_hover": "#d32f2f",    # 成功色悬停
+    "text_primary": "#ffffff",     # 主文字 (白色)
+    "text_secondary": "#ff5252",   # 次级文字 (浅红)
+    "text_muted": "#888888",       # 灰色文字
+    "border": "#3d0000",           # 边框色 (深红)
+    "radio_selected": "#ff1744",   # 单选选中色 (亮红)
 }
 
 
@@ -279,33 +284,41 @@ class Dota2Launcher:
         header_frame = tk.Frame(main_container, bg=COLORS["bg_primary"])
         header_frame.pack(fill=tk.X, pady=(0, 24))
 
-        # 图标 + 标题
+        # 图标 + 标题（居中）
         title_row = tk.Frame(header_frame, bg=COLORS["bg_primary"])
-        title_row.pack(anchor="w")
+        title_row.pack(anchor="center")
 
-        # Dota 2 风格图标（使用 Canvas 绘制）
-        icon_canvas = tk.Canvas(title_row, width=48, height=48, bg=COLORS["bg_primary"],
-                               highlightthickness=0)
-        icon_canvas.pack(side=tk.LEFT, padx=(0, 16))
-
-        # 绘制 Dota 2 风格的图标（简单的几何图形）
-        # 外圈
-        icon_canvas.create_oval(4, 4, 44, 44, outline=COLORS["accent"], width=3)
-        # 内三角形
-        icon_canvas.create_polygon(24, 12, 36, 32, 12, 32, fill=COLORS["accent"], outline="")
-        # 中间的小圆
-        icon_canvas.create_oval(18, 22, 30, 34, fill=COLORS["bg_primary"], outline="")
+        # Dota 2 Logo（使用图片）
+        try:
+            logo_path = os.path.join(os.path.dirname(__file__), "dota2.png")
+            if os.path.exists(logo_path) and Image and ImageTk:
+                logo_img = Image.open(logo_path)
+                logo_img = logo_img.resize((48, 48), Image.LANCZOS)
+                logo_tk = ImageTk.PhotoImage(logo_img)
+                logo_label = tk.Label(title_row, image=logo_tk, bg=COLORS["bg_primary"])
+                logo_label.image = logo_tk  # 保持引用
+                logo_label.pack(side=tk.LEFT, padx=(0, 16))
+            else:
+                raise FileNotFoundError()
+        except:
+            # 备用：绘制 Dota 2 风格图标
+            icon_canvas = tk.Canvas(title_row, width=48, height=48, bg=COLORS["bg_primary"],
+                                   highlightthickness=0)
+            icon_canvas.pack(side=tk.LEFT, padx=(0, 16))
+            icon_canvas.create_oval(4, 4, 44, 44, outline=COLORS["accent"], width=3)
+            icon_canvas.create_polygon(24, 12, 36, 32, 12, 32, fill=COLORS["accent"], outline="")
+            icon_canvas.create_oval(18, 22, 30, 34, fill=COLORS["bg_primary"], outline="")
 
         # 标题文字
         title_col = tk.Frame(title_row, bg=COLORS["bg_primary"])
         title_col.pack(side=tk.LEFT)
 
         title = tk.Label(title_col, text="Dota 2", bg=COLORS["bg_primary"],
-                        fg=COLORS["text_primary"], font=("Microsoft YaHei", 24, "bold"))
+                        fg=COLORS["text_primary"], font=("Microsoft YaHei", 28, "bold"))
         title.pack(anchor="w")
 
         subtitle = tk.Label(title_col, text="国服启动器", bg=COLORS["bg_primary"],
-                           fg=COLORS["text_muted"], font=("Microsoft YaHei", 12))
+                           fg=COLORS["accent"], font=("Microsoft YaHei", 14, "bold"))
         subtitle.pack(anchor="w")
 
         # 分隔线
