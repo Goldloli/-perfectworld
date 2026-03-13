@@ -329,14 +329,6 @@ class Dota2Launcher:
             except Exception as e:
                 print(f"[警告] 无法加载 icon.ico: {e}")
 
-        if not logo_loaded:
-            # 最终备用：绘制 Dota 2 风格图标
-            icon_canvas = tk.Canvas(title_row, width=48, height=48, bg=COLORS["bg_primary"],
-                                   highlightthickness=0)
-            icon_canvas.pack(side=tk.LEFT, padx=(0, 16))
-            icon_canvas.create_oval(4, 4, 44, 44, outline=COLORS["accent"], width=3)
-            icon_canvas.create_polygon(24, 12, 36, 32, 12, 32, fill=COLORS["accent"], outline="")
-            icon_canvas.create_oval(18, 22, 30, 34, fill=COLORS["bg_primary"], outline="")
 
         # 标题文字
         title_col = tk.Frame(title_row, bg=COLORS["bg_primary"])
