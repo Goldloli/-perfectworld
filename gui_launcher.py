@@ -198,7 +198,7 @@ class Dota2Launcher:
         self.option_pw = RadioOption(
             content_frame,
             title="-perfectworld",
-            subtitle="在低延迟的国服服务器上游玩，并使用您蒸汽平台账户内的钱包资金消费。",
+            subtitle="在低延迟的国服服务器上游玩，并使用您蒸汽平台帐户内的钱包资金消费。",
             value="perfectworld",
             variable=self.server_type
         )
@@ -207,8 +207,8 @@ class Dota2Launcher:
         # 国际服选项
         self.option_ww = RadioOption(
             content_frame,
-            title="-worldwide",
-            subtitle="在中国境外的服务器上游玩，并使用您 Steam 账户内的钱包资金消费。",
+            title="国际服",
+            subtitle="在中国境外的服务器上游玩，并使用您Steam 帐户内的钱包资金消费。可能会造成丢包卡顿等众多网络问题。",
             value="worldwide",
             variable=self.server_type
         )
@@ -219,17 +219,33 @@ class Dota2Launcher:
         bottom_frame.pack(fill=tk.X, side=tk.BOTTOM)
         bottom_frame.pack_propagate(False)
 
-        # 开始按钮
-        self.start_btn = ModernButton(
-            bottom_frame,
-            text="[ 开始 ]",
-            command=self.on_start,
-            width=180,
+        # 按钮容器
+        btn_frame = tk.Frame(bottom_frame, bg="#1a1a1a")
+        btn_frame.pack(expand=True)
+
+        # 写入启动项按钮
+        self.write_btn = ModernButton(
+            btn_frame,
+            text="[ 写入启动项 ]",
+            command=self.on_write_only,
+            width=150,
             height=45,
             bg_color="#3a3a3a",
             hover_color="#4a4a4a"
         )
-        self.start_btn.place(relx=0.5, rely=0.5, anchor="center")
+        self.write_btn.pack(side=tk.LEFT, padx=10)
+
+        # 开始游戏按钮
+        self.start_btn = ModernButton(
+            btn_frame,
+            text="[ 开始游戏 ]",
+            command=self.on_start_game,
+            width=150,
+            height=45,
+            bg_color="#5a4a3a",
+            hover_color="#6a5a4a"
+        )
+        self.start_btn.pack(side=tk.LEFT, padx=10)
 
         # 状态栏
         self.status_label = tk.Label(self.root,
