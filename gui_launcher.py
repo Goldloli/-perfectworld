@@ -261,19 +261,24 @@ class Dota2Launcher:
             # PyInstaller 打包后的临时目录
             return os.path.join(sys._MEIPASS, filename)
         else:
-            # 开发环境
-            return os.path.join(os.path.dirname(__file__), filename)
+            # 开发环境 - 使用绝对路径确保正确
+            base_path = os.path.abspath(os.path.dirname(__file__))
+            return os.path.join(base_path, filename)
 
     def set_window_icon(self):
         """设置窗口图标"""
         try:
             # 加载 icon.ico 作为窗口图标
             icon_path = self.get_resource_path("icon.ico")
+            print(f"[调试] 窗口图标路径: {icon_path}")
             if os.path.exists(icon_path) and Image and ImageTk:
                 icon_img = Image.open(icon_path)
                 icon_tk = ImageTk.PhotoImage(icon_img)
                 self.root.iconphoto(True, icon_tk)
                 self.icon_img = icon_tk  # 保持引用防止被垃圾回收
+                print("[调试] 窗口图标设置成功")
+            else:
+                print(f"[调试] 窗口图标文件不存在或 PIL 未安装")
         except Exception as e:
             print(f"[警告] 无法设置窗口图标: {e}")
 
@@ -301,18 +306,23 @@ class Dota2Launcher:
         title_row.pack(anchor="center")
 
         # Dota 2 Logo（优先使用 dota2.png，更可靠）
+        self.logo_label = None  # 初始化为 None，后续如果加载成功会赋值
         logo_loaded = False
         try:
             # 优先尝试 dota2.png
             png_path = self.get_resource_path("dota2.png")
+            print(f"[调试] 尝试加载: {png_path}")
             if os.path.exists(png_path) and Image and ImageTk:
                 logo_img = Image.open(png_path)
                 logo_img = logo_img.resize((48, 48), Image.LANCZOS)
                 logo_tk = ImageTk.PhotoImage(logo_img)
-                logo_label = tk.Label(title_row, image=logo_tk, bg=COLORS["bg_primary"])
-                logo_label.image = logo_tk  # 保持引用
-                logo_label.pack(side=tk.LEFT, padx=(0, 16))
+                self.logo_label = tk.Label(title_row, image=logo_tk, bg=COLORS["bg_primary"])
+                self.logo_label.image = logo_tk  # 保持引用
+                self.logo_label.pack(side=tk.LEFT, padx=(0, 16))
                 logo_loaded = True
+                print("[调试] dota2.png 加载成功")
+            else:
+                print(f"[调试] dota2.png 不存在或 PIL 未安装")
         except Exception as e:
             print(f"[警告] 无法加载 dota2.png: {e}")
 
@@ -320,14 +330,18 @@ class Dota2Launcher:
             try:
                 # 备用：尝试 icon.ico
                 icon_path = self.get_resource_path("icon.ico")
+                print(f"[调试] 尝试加载备用: {icon_path}")
                 if os.path.exists(icon_path) and Image and ImageTk:
                     logo_img = Image.open(icon_path)
                     logo_img = logo_img.resize((48, 48), Image.LANCZOS)
                     logo_tk = ImageTk.PhotoImage(logo_img)
-                    logo_label = tk.Label(title_row, image=logo_tk, bg=COLORS["bg_primary"])
-                    logo_label.image = logo_tk
-                    logo_label.pack(side=tk.LEFT, padx=(0, 16))
+                    self.logo_label = tk.Label(title_row, image=logo_tk, bg=COLORS["bg_primary"])
+                    self.logo_label.image = logo_tk
+                    self.logo_label.pack(side=tk.LEFT, padx=(0, 16))
                     logo_loaded = True
+                    print("[调试] icon.ico 加载成功")
+                else:
+                    print(f"[调试] icon.ico 不存在或 PIL 未安装")
             except Exception as e:
                 print(f"[警告] 无法加载 icon.ico: {e}")
 
