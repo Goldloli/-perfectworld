@@ -138,7 +138,7 @@ class RadioOption(tk.Frame):
         self.config(highlightbackground=COLORS["border"], highlightthickness=1)
 
         # 内边距容器
-        inner_frame = tk.Frame(self, bg=COLORS["bg_card"], padx=20, pady=16)
+        inner_frame = tk.Frame(self, bg=COLORS["bg_card"], padx=24, pady=20)
         inner_frame.pack(fill=tk.BOTH, expand=True)
 
         # 左侧选择指示器
@@ -177,7 +177,7 @@ class RadioOption(tk.Frame):
         # 副标题
         self.subtitle_label = tk.Label(text_frame, text=subtitle, bg=COLORS["bg_card"],
                                       fg=COLORS["text_muted"], font=("Microsoft YaHei", 10),
-                                      anchor="w", wraplength=380, justify=tk.LEFT)
+                                      anchor="w", wraplength=450, justify=tk.LEFT)
         self.subtitle_label.pack(fill=tk.X, pady=(6, 0))
 
         # 绑定点击事件
@@ -230,7 +230,7 @@ class Dota2Launcher:
     def __init__(self, root):
         self.root = root
         self.root.title("Dota 2 国服启动器")
-        self.root.geometry("560x480")
+        self.root.geometry("640x520")
         self.root.resizable(False, False)
         self.root.configure(bg=COLORS["bg_primary"])
 
@@ -261,8 +261,8 @@ class Dota2Launcher:
     def center_window(self):
         """窗口居中"""
         self.root.update_idletasks()
-        width = 560
-        height = 480
+        width = 640
+        height = 520
         x = (self.root.winfo_screenwidth() // 2) - (width // 2)
         y = (self.root.winfo_screenheight() // 2) - (height // 2)
         self.root.geometry(f'{width}x{height}+{x}+{y}')
@@ -271,7 +271,7 @@ class Dota2Launcher:
         """创建现代扁平化界面"""
         # 主容器
         main_container = tk.Frame(self.root, bg=COLORS["bg_primary"])
-        main_container.pack(fill=tk.BOTH, expand=True, padx=32, pady=24)
+        main_container.pack(fill=tk.BOTH, expand=True, padx=40, pady=30)
 
         # 顶部标题区域
         header_frame = tk.Frame(main_container, bg=COLORS["bg_primary"])
