@@ -48,11 +48,11 @@ def generate_icon():
 
     # 保存为多尺寸 ICO 文件
     img.save('icon.ico', sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
-    print("✓ 图标已生成: icon.ico")
+    print("[OK] 图标已生成: icon.ico")
 
     # 同时生成一个 PNG 预览
     img.save('icon_preview.png')
-    print("✓ 预览图已生成: icon_preview.png")
+    print("[OK] 预览图已生成: icon_preview.png")
 
 if __name__ == "__main__":
     generate_icon()
