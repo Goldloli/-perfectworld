@@ -351,7 +351,7 @@ class Dota2Launcher:
         # 写入启动项按钮（次要按钮）
         self.write_btn = ModernButton(
             btn_frame,
-            text="仅写入启动项",
+            text="写入启动项",
             command=self.on_write_only,
             width=140,
             height=40,
@@ -446,7 +446,7 @@ class Dota2Launcher:
         return success_count, server_name
 
     def on_write_only(self):
-        """仅写入启动项，不启动游戏"""
+        """写入启动项，不启动游戏"""
         self.write_btn.text = "写入中..."
         self.write_btn.draw_button()
         self.root.update()
@@ -467,7 +467,7 @@ class Dota2Launcher:
         except Exception as e:
             messagebox.showerror("错误", str(e))
         finally:
-            self.write_btn.text = "仅写入启动项"
+            self.write_btn.text = "写入启动项"
             self.write_btn.draw_button()
             self.status_label.config(fg=COLORS["text_muted"])
 
