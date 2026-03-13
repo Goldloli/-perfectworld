@@ -25,6 +25,8 @@ jobs:
 
     - name: Generate icon
       run: python generate_icon.py
+      env:
+        PYTHONIOENCODING: utf-8
 
     - name: Build executable
       run: |
