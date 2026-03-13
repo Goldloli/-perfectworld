@@ -87,11 +87,15 @@ def generate_icon():
     draw.ellipse([center_x - 8, center_y + 35, center_x - 3, center_y + 42], fill=dark_red)
     draw.ellipse([center_x + 3, center_y + 35, center_x + 8, center_y + 42], fill=dark_red)
 
-    # 保存为多尺寸 ICO 文件
+    # 保存为多尺寸 ICO 文件（用于窗口图标）
     img.save('icon.ico', sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
     print("[OK] Icon generated: icon.ico")
 
-    # 同时生成一个 PNG 预览
+    # 同时生成 dota2.png（用于界面显示）
+    img.save('dota2.png', 'PNG')
+    print("[OK] PNG generated: dota2.png")
+
+    # 生成预览图
     img.save('icon_preview.png')
     print("[OK] Preview generated: icon_preview.png")
 

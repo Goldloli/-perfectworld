@@ -20,19 +20,19 @@ except ImportError:
 # Dota 2 AppID
 DOTA2_APPID = "570"
 
-# 配色方案 - Dota 2 红黑色调
+# 配色方案 - Dota 2 红黑色调（优化可读性）
 COLORS = {
-    "bg_primary": "#0d0d0d",       # 主背景 (深黑)
-    "bg_secondary": "#1a1a1a",     # 次级背景
-    "bg_card": "#242424",          # 卡片背景
+    "bg_primary": "#333333",       # 主背景 (深灰色)
+    "bg_secondary": "#2d2d2d",     # 次级背景
+    "bg_card": "#3d3d3d",          # 卡片背景
     "accent": "#b71c1c",           # 强调色 (Dota红)
     "accent_hover": "#d32f2f",     # 强调色悬停 (亮红)
     "success": "#b71c1c",          # 成功色 (红色)
     "success_hover": "#d32f2f",    # 成功色悬停
     "text_primary": "#ffffff",     # 主文字 (白色)
-    "text_secondary": "#ff5252",   # 次级文字 (浅红)
-    "text_muted": "#888888",       # 灰色文字
-    "border": "#3d0000",           # 边框色 (深红)
+    "text_secondary": "#ff6b6b",   # 次级文字 (浅红，提高对比度)
+    "text_muted": "#aaaaaa",       # 灰色文字（提高亮度）
+    "border": "#5c0000",           # 边框色 (深红)
     "radio_selected": "#ff1744",   # 单选选中色 (亮红)
 }
 
@@ -298,20 +298,39 @@ class Dota2Launcher:
         title_row = tk.Frame(header_frame, bg=COLORS["bg_primary"])
         title_row.pack(anchor="center")
 
-        # Dota 2 Logo（使用 icon.ico）
+        # Dota 2 Logo（优先使用 dota2.png，更可靠）
+        logo_loaded = False
         try:
-            icon_path = self.get_resource_path("icon.ico")
-            if os.path.exists(icon_path) and Image and ImageTk:
-                logo_img = Image.open(icon_path)
+            # 优先尝试 dota2.png
+            png_path = self.get_resource_path("dota2.png")
+            if os.path.exists(png_path) and Image and ImageTk:
+                logo_img = Image.open(png_path)
                 logo_img = logo_img.resize((48, 48), Image.LANCZOS)
                 logo_tk = ImageTk.PhotoImage(logo_img)
                 logo_label = tk.Label(title_row, image=logo_tk, bg=COLORS["bg_primary"])
                 logo_label.image = logo_tk  # 保持引用
                 logo_label.pack(side=tk.LEFT, padx=(0, 16))
-            else:
-                raise FileNotFoundError()
-        except:
-            # 备用：绘制 Dota 2 风格图标
+                logo_loaded = True
+        except Exception as e:
+            print(f"[警告] 无法加载 dota2.png: {e}")
+
+        if not logo_loaded:
+            try:
+                # 备用：尝试 icon.ico
+                icon_path = self.get_resource_path("icon.ico")
+                if os.path.exists(icon_path) and Image and ImageTk:
+                    logo_img = Image.open(icon_path)
+                    logo_img = logo_img.resize((48, 48), Image.LANCZOS)
+                    logo_tk = ImageTk.PhotoImage(logo_img)
+                    logo_label = tk.Label(title_row, image=logo_tk, bg=COLORS["bg_primary"])
+                    logo_label.image = logo_tk
+                    logo_label.pack(side=tk.LEFT, padx=(0, 16))
+                    logo_loaded = True
+            except Exception as e:
+                print(f"[警告] 无法加载 icon.ico: {e}")
+
+        if not logo_loaded:
+            # 最终备用：绘制 Dota 2 风格图标
             icon_canvas = tk.Canvas(title_row, width=48, height=48, bg=COLORS["bg_primary"],
                                    highlightthickness=0)
             icon_canvas.pack(side=tk.LEFT, padx=(0, 16))
@@ -386,7 +405,7 @@ class Dota2Launcher:
         )
         self.write_btn.pack(side=tk.LEFT, padx=(0, 12))
 
-        # 开始游戏按钮（主要按钮）
+        # 开始游戏按钮（主要按钮）- 白色文字
         self.start_btn = ModernButton(
             btn_frame,
             text="开始游戏",
@@ -395,7 +414,7 @@ class Dota2Launcher:
             height=40,
             bg_color=COLORS["success"],
             hover_color=COLORS["success_hover"],
-            text_color="#1e1e2e"
+            text_color="#ffffff"
         )
         self.start_btn.pack(side=tk.LEFT)
 
