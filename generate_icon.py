@@ -91,11 +91,7 @@ def generate_icon():
     img.save('icon.ico', sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
     print("[OK] Icon generated: icon.ico")
 
-    # 同时生成 dota2.png（用于界面显示）
-    img.save('dota2.png', 'PNG')
-    print("[OK] PNG generated: dota2.png")
-
-    # 生成预览图
+    # 生成预览图（注意：不生成 dota2.png，使用用户上传的文件）
     img.save('icon_preview.png')
     print("[OK] Preview generated: icon_preview.png")
 

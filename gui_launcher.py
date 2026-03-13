@@ -386,26 +386,26 @@ class Dota2Launcher:
         btn_frame = tk.Frame(bottom_frame, bg=COLORS["bg_primary"])
         btn_frame.pack(pady=(16, 8))
 
-        # 写入启动项按钮（次要按钮）
+        # 写入启动项按钮（次要按钮）- 尺寸翻倍
         self.write_btn = ModernButton(
             btn_frame,
             text="写入启动项",
             command=self.on_write_only,
-            width=140,
-            height=40,
+            width=200,
+            height=52,
             bg_color=COLORS["bg_card"],
             hover_color=COLORS["bg_secondary"],
             text_color=COLORS["text_primary"]
         )
-        self.write_btn.pack(side=tk.LEFT, padx=(0, 12))
+        self.write_btn.pack(side=tk.LEFT, padx=(0, 16))
 
-        # 开始游戏按钮（主要按钮）- 白色文字
+        # 开始游戏按钮（主要按钮）- 白色文字，尺寸翻倍
         self.start_btn = ModernButton(
             btn_frame,
             text="开始游戏",
             command=self.on_start_game,
-            width=140,
-            height=40,
+            width=200,
+            height=52,
             bg_color=COLORS["success"],
             hover_color=COLORS["success_hover"],
             text_color="#ffffff"
