@@ -454,6 +454,7 @@ class Dota2Launcher:
         for path in possible_paths:
             if path and os.path.exists(os.path.join(path, "steam.exe")):
                 self.steam_path = path
+                print(f"[调试] 找到 Steam 路径: {path}")
                 return
 
         # 尝试注册表
@@ -485,6 +486,17 @@ class Dota2Launcher:
         if not user_ids:
             messagebox.showerror("错误", "未找到 Steam 用户配置")
             return 0, ""
+
+        # 检查 Steam 是否在运行
+        if self.is_steam_running():
+            result = messagebox.askyesno(
+                "警告",
+                "Steam 当前正在运行。\n\n"
+                "修改配置后需要完全退出 Steam（包括托盘图标）才能生效。\n"
+                "是否继续？"
+            )
+            if not result:
+                return 0, ""
 
         use_pw = self.server_type.get() == "perfectworld"
         server_name = "国服" if use_pw else "国际服"
@@ -543,7 +555,16 @@ class Dota2Launcher:
             self.status_label.config(text=f"正在启动 Dota 2...", fg=COLORS["success"])
             self.root.update()
 
-            os.startfile("steam://rungameid/570")
+            # 根据服务器类型构建启动 URL
+            use_pw = self.server_type.get() == "perfectworld"
+            if use_pw:
+                # 带 -perfectworld 参数启动
+                steam_url = "steam://rungameid/570//-perfectworld"
+            else:
+                # 普通启动
+                steam_url = "steam://rungameid/570"
+
+            os.startfile(steam_url)
 
             # 延迟关闭
             self.root.after(2000, self.root.destroy)
@@ -567,12 +588,25 @@ class Dota2Launcher:
         except:
             return []
 
+    def is_steam_running(self):
+        """检测 Steam 是否在运行"""
+        try:
+            import subprocess
+            result = subprocess.run(['tasklist', '/FI', 'IMAGENAME eq Steam.exe'],
+                                    capture_output=True, text=True)
+            return 'Steam.exe' in result.stdout
+        except:
+            return False
+
     def configure_launch_options(self, user_id, use_perfectworld):
         """配置启动选项"""
         try:
             config_path = os.path.join(self.steam_path, "userdata", user_id,
-                                      "7", "remote", "sharedconfig.vdf")
+                                      "config", "localconfig.vdf")
             config_dir = os.path.dirname(config_path)
+
+            print(f"[调试] 配置文件路径: {config_path}")
+            print(f"[调试] Steam 运行中: {self.is_steam_running()}")
 
             if not os.path.exists(config_dir):
                 os.makedirs(config_dir)
@@ -585,28 +619,40 @@ class Dota2Launcher:
                 # 备份
                 backup_path = f"{config_path}.backup.{datetime.now():%Y%m%d%H%M%S}"
                 shutil.copy2(config_path, backup_path)
+                print(f"[调试] 已备份到: {backup_path}")
+
+                # 检查现有 LaunchOptions
+                existing = re.search(r'"LaunchOptions"\s*"([^"]*)"', content)
+                if existing:
+                    print(f"[调试] 现有启动项: {existing.group(1)}")
 
                 # 修改启动项
                 if use_perfectworld:
-                    # 添加 -perfectworld（会先清理旧的）
                     content = self.add_launch_option(content, "-perfectworld")
                 else:
-                    # 国际服：移除 -perfectworld，不添加其他内容
                     content = self.remove_launch_option(content, "-perfectworld")
 
                 with open(config_path, 'w', encoding='utf-8') as f:
                     f.write(content)
+
+                # 验证写入
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    new_content = f.read()
+                new_match = re.search(r'"570".*?\{[^}]*"LaunchOptions"\s*"([^"]*)"', new_content, re.DOTALL)
+                if new_match:
+                    print(f"[调试] 写入后启动项: {new_match.group(1)}")
             else:
-                # 创建新配置（只有国服需要创建，国际服不需要任何配置）
+                print(f"[调试] 配置文件不存在，创建新配置")
                 if use_perfectworld:
                     content = self.create_new_config(True)
                     with open(config_path, 'w', encoding='utf-8') as f:
                         f.write(content)
-                # 国际服且文件不存在：什么都不做
 
             return True, None
 
         except Exception as e:
+            import traceback
+            print(f"[错误] {traceback.format_exc()}")
             return False, str(e)
 
     def add_launch_option(self, content, option):
@@ -614,34 +660,65 @@ class Dota2Launcher:
         # 先移除 -perfectworld（避免重复添加）
         content = self.remove_launch_option(content, "-perfectworld")
 
-        # 查找 Dota 2 配置段
-        dota_pattern = r'"570"\s*\{([^}]*)\}'
-        match = re.search(dota_pattern, content, re.DOTALL)
+        # 查找 Dota 2 配置段（支持多级嵌套）
+        # 尝试匹配 Software/Valve/Steam/apps/570 路径下的配置
+        patterns = [
+            # macOS/Linux 格式："Software" -> "Valve" -> "Steam" -> "apps" -> "570"
+            r'("Software"[^{]*\{[^{]*"Valve"[^{]*\{[^{]*"Steam"[^{]*\{[^{]*"apps"[^{]*\{[^}]*)("570"\s*\{[^}]*\})',
+            # 通用格式：直接查找 "570" 段
+            r'("570"\s*\{[^}]*\})',
+        ]
 
-        if match:
-            # 已有 Dota 2 配置，修改 LaunchOptions
-            section = match.group(1)
-            if '"LaunchOptions"' in section:
-                # 修改现有启动项
-                new_section = re.sub(
-                    r'("LaunchOptions"\s*")([^"]*)"',
-                    lambda m: f'{m.group(1)}{option}"',
-                    section
-                )
-            else:
-                # 添加 LaunchOptions
-                new_section = section.rstrip() + f'\n\t\t\t\t"LaunchOptions"\t\t"{option}"'
+        for pattern in patterns:
+            match = re.search(pattern, content, re.DOTALL)
+            if match:
+                if len(match.groups()) > 1:
+                    # 第一种模式，需要替换第二个分组
+                    dota_section = match.group(2)
+                else:
+                    dota_section = match.group(1)
 
-            content = content.replace(match.group(0), f'"570"\n\t\t\t\t{{{new_section}\n\t\t\t\t}}')
-        else:
-            # 添加新的 Dota 2 配置段
-            new_app = f'''"570"
-\t\t\t\t{{
-\t\t\t\t\t"LaunchOptions"\t\t"{option}"
-\t\t\t\t}}'''
-            # 在 apps 段中添加
-            content = re.sub(r'("apps"\s*\{)', r'\1\n\t\t\t\t' + new_app, content)
+                # 检查是否已有 LaunchOptions
+                if '"LaunchOptions"' in dota_section:
+                    # 替换现有的 LaunchOptions
+                    new_section = re.sub(
+                        r'("LaunchOptions"\s*")([^"]*)"',
+                        rf'\g<1>{option}"',
+                        dota_section
+                    )
+                else:
+                    # 在段内添加 LaunchOptions（使用制表符匹配 Steam 格式）
+                    # 找到最后一个 } 之前的位置插入
+                    new_section = dota_section.rstrip()
+                    if new_section.endswith('}'):
+                        # 获取缩进级别
+                        indent_match = re.search(r'^(\s*)"570"', dota_section, re.MULTILINE)
+                        base_indent = indent_match.group(1) if indent_match else '\t\t\t\t\t'
+                        inner_indent = base_indent + '\t'
+                        new_section = new_section[:-1] + f'{inner_indent}"LaunchOptions"\t\t"{option}"\n{base_indent}}}'
 
+                content = content.replace(dota_section, new_section)
+                print(f"[调试] 已更新 Dota 2 配置段")
+                return content
+
+        # 如果没找到 "570" 段，在 apps 下创建新的
+        apps_patterns = [
+            # macOS/Linux 格式
+            r'("Software"[^{]*\{[^{]*"Valve"[^{]*\{[^{]*"Steam"[^{]*\{[^{]*"apps"\s*\{)',
+            # 通用格式
+            r'("apps"\s*\{)',
+        ]
+
+        for pattern in apps_patterns:
+            match = re.search(pattern, content, re.DOTALL)
+            if match:
+                indent = '\t\t\t\t\t'  # 5 级缩进
+                new_app = f'{indent}"570"\n{indent}{{\n{indent}\t"LaunchOptions"\t\t"{option}"\n{indent}}}'
+                content = content[:match.end()] + '\n' + new_app + content[match.end():]
+                print(f"[调试] 已创建新的 Dota 2 配置段")
+                return content
+
+        print(f"[调试] 警告：未找到合适的配置位置")
         return content
 
     def remove_launch_option(self, content, option):
@@ -656,19 +733,19 @@ class Dota2Launcher:
             new_section = re.sub(r'\s*"LaunchOptions"\s*"[^"]*"', '', section)
             content = content.replace(match.group(0), f'"570"\n\t\t\t\t{{{new_section}\n\t\t\t\t}}')
 
-        # 清理多余空行
-        content = re.sub(r'\n\n+', '\n', content)
+        # 清理多余空行（保留单行空行）
+        content = re.sub(r'\n\n\n+', '\n\n', content)
         return content
 
     def create_new_config(self, use_perfectworld):
-        """创建新的 VDF 配置"""
+        """创建新的 VDF 配置（使用 UserLocalConfigStore，与 Steam 一致）"""
         launch_opt = "-perfectworld" if use_perfectworld else ""
-        return f'''"UserRoamingConfigStore"
+        return f'''"UserLocalConfigStore"
 {{
 \t"Software"
 \t{{
 \t\t"Valve"
-\t{{
+\t\t{{
 \t\t\t"Steam"
 \t\t\t{{
 \t\t\t\t"apps"
